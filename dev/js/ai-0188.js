@@ -21,10 +21,11 @@ function AI0188(element, background){
 
 	this.wheelPercentage = 0.6;
 	this.wheelSize = 300;
-	this.svgSize = 500;
+	this.svgSize = 540;
 	this.theta = 0.6;
 	this.vTrans = this.theta * this.wheelSize/2;
 	this.ptR = 5;
+	this.tcurrent = 0;
 
 	this.init(element);
 }
@@ -125,8 +126,8 @@ AI0188.prototype.createRaphael = function(){
 	//this.wheelCircle.click(this.wheelClick);
 	this.wheelImage.newParent = this;
 	this.wheelImage.click(this.wheelClick);
-	this.wheelAnimation = Raphael.animation({transform: "r-360"}, 8000).repeat(Infinity);
-	this.wheelImage.animate(this.wheelAnimation);
+	//this.wheelAnimation = Raphael.animation({transform: "r-360"}, 8000).repeat(Infinity);
+	//this.wheelImage.animate(this.wheelAnimation);
 	//$('#wheelDiv').rotate();
 	requestAnimationFrame(this.updateT.bind(this));
 }
@@ -138,27 +139,27 @@ AI0188.prototype.wheelClick = function(evt){
 	var posx = Number(((evt.x - div.offset().left) * ai.svgSize/div.width()).toFixed(0));
 	var posy = Number(((evt.y - div.offset().top) * ai.svgSize/div.height()).toFixed(0));
 	var ray = distance(ai.svgSize/2, ai.svgSize/2, posx, posy);
-	var minDist = 5;
+	var minDist = 15;
 	if(ray <= ai.wheelSize/2 + 2) {
 		if(distance(posx, posy, ai.svgSize/2, ai.svgSize/2) < minDist){
 			//Posiciona o ponto no centro da roda:
-			ai.addPoint(ai.svgSize/2, ai.svgSize/2, ray);
+			ai.addPoint(ai.svgSize/2, ai.svgSize/2, 0);
 
 		}else if(distance(posx, posy, ai.svgSize/2 + ai.wheelSize/2, ai.svgSize/2) < minDist){
 			//Posiciona o ponto no ponto 1 (0 graus)
-			ai.addPoint(ai.svgSize/2 + ai.wheelSize/2, ai.svgSize/2, ray);
+			ai.addPoint(ai.svgSize/2 + ai.wheelSize/2, ai.svgSize/2, ai.wheelSize/2);
 
 		}else if(distance(posx, posy, ai.svgSize/2, ai.svgSize/2 - ai.wheelSize/2) < minDist){
 			//Posiciona o ponto no ponto 2 (90 graus)
-			ai.addPoint(ai.svgSize/2, ai.svgSize/2 - ai.wheelSize/2, ray);
+			ai.addPoint(ai.svgSize/2, ai.svgSize/2 - ai.wheelSize/2, ai.wheelSize/2);
 
 		}else if(distance(posx, posy, ai.svgSize/2 - ai.wheelSize/2, ai.svgSize/2) < minDist){
 			//Posiciona o ponto no ponto 3 (180 graus)
-			ai.addPoint(ai.svgSize/2 - ai.wheelSize/2, ai.svgSize/2, ray);
-			
+			ai.addPoint(ai.svgSize/2 - ai.wheelSize/2, ai.svgSize/2, ai.wheelSize/2);
+
 		}else if(distance(posx, posy, ai.svgSize/2, ai.svgSize/2 + ai.wheelSize/2) < minDist){
 			//Posiciona o ponto no ponto 4 (270 graus)
-			ai.addPoint(ai.svgSize/2, ai.svgSize/2 + ai.wheelSize/2, ray);
+			ai.addPoint(ai.svgSize/2, ai.svgSize/2 + ai.wheelSize/2, ai.wheelSize/2);
 		}else{
 			//Posiciona o ponto onde foi clicado.
 			ai.addPoint(posx, posy, ray);
@@ -172,6 +173,7 @@ AI0188.prototype.addPoint = function(ptx, pty, ray){
 	//Angulo do ponto em relação à origem.
 	last.angle = Math.atan2(pty - this.svgSize/2, ptx - this.svgSize/2);
 	last.ray = ray;
+	last.tInicial = this.tcurrent;
 	//last.inicial = {x:ptx, y:pty};
 	//Set com os objetos que rotacionarao junto com o ponto
 	last.set = this.raphael.set();
@@ -183,51 +185,65 @@ AI0188.prototype.addPoint = function(ptx, pty, ray){
 	last.d = this.theta * ray;
 	var rotx = ray * Math.cos(last.angle) + last.d * Math.sin(last.angle) + this.svgSize/2;
 	var roty = ray * Math.sin(last.angle) - last.d * Math.cos(last.angle) + this.svgSize/2;
-	last.rot = this.raphael.path("M" + ptx + "," + pty + "L" + rotx + "," + roty).attr({"stroke-width": "3", "stroke": "#0000FF", fill:"#0000FF"});
+	last.rot = this.raphael.path("M" + ptx + "," + pty + "L" + rotx + "," + roty).attr({"stroke-width": "2", "stroke": "#0000FF", fill:"#0000FF"});
 	
 	//Vetor resultante
 	var resultx = (ptx - this.vTrans - ptx) + (rotx - ptx) + ptx;
 	var resulty = (pty - pty) + (roty - pty) + pty;
-	last.result = this.raphael.path("M" + ptx + "," + pty + "L" + resultx + "," + resulty + drawArrow(resultx, resulty, 0)).attr({"stroke-width": "3", "stroke": "#00FF00", fill:"#00FF00"});
+	last.result = this.raphael.path("M" + ptx + "," + pty + "L" + resultx + "," + resulty + drawArrow(resultx, resulty, 0)).attr({"stroke-width": "1", "stroke": "#00FF00", fill:"#00FF00"});
 	
 	//O ponto
 	last.pt = this.raphael.circle(ptx, pty, this.ptR).attr("fill", "#F00");
-	last.set.push(last.pt);
+	//last.set.push(last.pt);
 	//last.set.push(last.rot);
 
-	var lastAnimation = Raphael.animation({transform: "r-360 " + (this.svgSize/2) + "," + (this.svgSize/2)}, 8000/*, "linear", function(){last.set.attr({"transform": ""}), console.log(last.set)}*/).repeat(Infinity);
+	//var lastAnimation = Raphael.animation({transform: "r-360 " + (this.svgSize/2) + "," + (this.svgSize/2)}, 8000/*, "linear", function(){last.set.attr({"transform": ""}), console.log(last.set)}*/).repeat(Infinity);
 	//var vAnimation
-	last.set.animate(lastAnimation);
+	//last.set.animate(lastAnimation);
 	
 	this.pts.push(last);
 }
 
-AI0188.prototype.updateT = function(){
+AI0188.prototype.updateT = function(timestamp){
+	//var dt = (timestamp - this.tcurrent)/1000;
+	this.tcurrent = timestamp;
+	this.wheelImage.attr("transform", "r-" + this.theta * timestamp/10);
+
 	for (var i = 0; i < this.pts.length; i++) {
 		var pt = this.pts[i];
+		var ptRotation = this.theta * (timestamp - pt.tInicial)/10;
+		pt.pt.attr("transform", "r-" + ptRotation + " " + this.svgSize/2 + "," + this.svgSize/2);
 		var bbox = pt.pt.getBBox();
 		var ptx = bbox.x + this.ptR;
 		var pty = bbox.y + this.ptR;
 		pt.angle = Math.atan2(pty - this.svgSize/2, ptx - this.svgSize/2);
 
 		//Vetor translação:
-		pt.trans.attr("path", "M" + ptx + "," + pty + "L" + (ptx - this.vTrans) + "," + (pty) + drawArrow(bbox.x - this.vTrans + this.ptR, bbox.y + this.ptR, 0));
+		pt.trans.attr("path", "M" + ptx + "," + pty + "L" + (ptx - this.vTrans) + "," + (pty) + drawArrow(bbox.x - this.vTrans + this.ptR, bbox.y + this.ptR, Math.PI));
 
 		//Vetor rotação:
 		var rotx = pt.ray * Math.cos(pt.angle) + pt.d * Math.sin(pt.angle) + this.svgSize/2;
 		var roty = pt.ray * Math.sin(pt.angle) - pt.d * Math.cos(pt.angle) + this.svgSize/2;
-		pt.rot.attr("path", "M" + ptx + "," + pty + "L" + rotx + "," + roty);
+		pt.rot.attr("path", "M" + ptx + "," + pty + "L" + rotx + "," + roty + drawArrow(rotx, roty, pt.angle - Math.PI/2));
 
 		//Vetor resultante
 		var resultx = (ptx - this.vTrans - ptx) + (rotx - ptx) + ptx;
 		var resulty = (pty - pty) + (roty - pty) + pty;
-		pt.result.attr("path", "M" + ptx + "," + pty + "L" + resultx + "," + resulty + drawArrow(resultx, resulty, 0));
+		var angleResult = Math.atan2((pty - pty) + (roty - pty), (ptx - this.vTrans - ptx) + (rotx - ptx));
+		pt.result.attr("path", "M" + ptx + "," + pty + "L" + resultx + "," + resulty + drawArrow(resultx, resulty, angleResult));
 	};
 
 	requestAnimationFrame(this.updateT.bind(this));
 }
 
 function drawArrow(ptx, pty, angle){
-	return "Z";
-	//return "L" + (ptx - (15 * Math.cos(angle))) + "," + (pty + (5 * Math.sin(angle))) + "L" + (ptx - (15 * Math.cos(angle))) + "," + (pty - (5 * Math.sin(angle))) + "L" + ptx + "," + pty + "Z";
+	var r = 15;
+	var angle1 = 160 * Math.PI/180 + angle;
+	var angle2 = -160 * Math.PI/180 + angle;
+	var pt1x = r * Math.cos(angle1) + ptx;
+	var pt1y = r * Math.sin(angle1) + pty;
+	var pt2x = r * Math.cos(angle2) + ptx;
+	var pt2y = r * Math.sin(angle2) + pty;
+	//return "Z";
+	return "L" + pt1x + "," + pt1y + "L" + pt2x + "," + pt2y + "L" + ptx + "," + pty + "Z";
 }
