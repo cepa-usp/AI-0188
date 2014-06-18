@@ -26,6 +26,7 @@ function AI0188(element, background){
 	this.vTrans = this.theta * this.wheelSize/2;
 	this.ptR = 5;
 	this.tcurrent = 0;
+	this.count = 0;
 
 	this.init(element);
 }
@@ -209,28 +210,49 @@ AI0188.prototype.updateT = function(timestamp){
 	this.tcurrent = timestamp;
 	this.wheelImage.attr("transform", "r-" + this.theta * timestamp/10);
 
+	if(this.count < 1){
+		this.count++;
+		requestAnimationFrame(this.updateT.bind(this));
+		return;
+	}else{
+		this.count = 0;
+	}
+
+	var pt = null;
+	var ptRotation = null;
+	var bbox = null;
+	var ptx = null;
+	var pty = null;
+	var rotx = null;
+	var roty = null;
+	var resultx = null;
+	var resulty = null;
+	var angleResult = null;
+
 	for (var i = 0; i < this.pts.length; i++) {
-		var pt = this.pts[i];
-		var ptRotation = this.theta * (timestamp - pt.tInicial)/10;
+		pt = this.pts[i];
+		ptRotation = this.theta * (timestamp - pt.tInicial)/10;
 		pt.pt.attr("transform", "r-" + ptRotation + " " + this.svgSize/2 + "," + this.svgSize/2);
-		var bbox = pt.pt.getBBox();
-		var ptx = bbox.x + this.ptR;
-		var pty = bbox.y + this.ptR;
+		bbox = pt.pt.getBBox();
+		ptx = bbox.x + this.ptR;
+		pty = bbox.y + this.ptR;
 		pt.angle = Math.atan2(pty - this.svgSize/2, ptx - this.svgSize/2);
 
 		//Vetor translação:
 		pt.trans.attr("path", "M" + ptx + "," + pty + "L" + (ptx - this.vTrans) + "," + (pty) + drawArrow(bbox.x - this.vTrans + this.ptR, bbox.y + this.ptR, Math.PI));
 
 		//Vetor rotação:
-		var rotx = pt.ray * Math.cos(pt.angle) + pt.d * Math.sin(pt.angle) + this.svgSize/2;
-		var roty = pt.ray * Math.sin(pt.angle) - pt.d * Math.cos(pt.angle) + this.svgSize/2;
-		pt.rot.attr("path", "M" + ptx + "," + pty + "L" + rotx + "," + roty + drawArrow(rotx, roty, pt.angle - Math.PI/2));
+		rotx = pt.ray * Math.cos(pt.angle) + pt.d * Math.sin(pt.angle) + this.svgSize/2;
+		roty = pt.ray * Math.sin(pt.angle) - pt.d * Math.cos(pt.angle) + this.svgSize/2;
+		if(distance(rotx, roty, ptx, pty) > 5) pt.rot.attr("path", "M" + ptx + "," + pty + "L" + rotx + "," + roty + drawArrow(rotx, roty, pt.angle - Math.PI/2));
+		else pt.rot.attr("path", "M" + ptx + "," + pty + "Z");
 
 		//Vetor resultante
-		var resultx = (ptx - this.vTrans - ptx) + (rotx - ptx) + ptx;
-		var resulty = (pty - pty) + (roty - pty) + pty;
-		var angleResult = Math.atan2((pty - pty) + (roty - pty), (ptx - this.vTrans - ptx) + (rotx - ptx));
-		pt.result.attr("path", "M" + ptx + "," + pty + "L" + resultx + "," + resulty + drawArrow(resultx, resulty, angleResult));
+		resultx = (ptx - this.vTrans - ptx) + (rotx - ptx) + ptx;
+		resulty = (pty - pty) + (roty - pty) + pty;
+		angleResult = Math.atan2((pty - pty) + (roty - pty), (ptx - this.vTrans - ptx) + (rotx - ptx));
+		if(distance(resultx, resulty, ptx, pty) >= 10) pt.result.attr("path", "M" + ptx + "," + pty + "L" + resultx + "," + resulty + drawArrow(resultx, resulty, angleResult));
+		else pt.result.attr("path", "M" + ptx + "," + pty + "L" + resultx + "," + resulty);
 	};
 
 	requestAnimationFrame(this.updateT.bind(this));
@@ -238,12 +260,13 @@ AI0188.prototype.updateT = function(timestamp){
 
 function drawArrow(ptx, pty, angle){
 	var r = 15;
-	var angle1 = 160 * Math.PI/180 + angle;
+	/*var angle1 = 160 * Math.PI/180 + angle;
 	var angle2 = -160 * Math.PI/180 + angle;
 	var pt1x = r * Math.cos(angle1) + ptx;
 	var pt1y = r * Math.sin(angle1) + pty;
 	var pt2x = r * Math.cos(angle2) + ptx;
-	var pt2y = r * Math.sin(angle2) + pty;
+	var pt2y = r * Math.sin(angle2) + pty;*/
 	//return "Z";
-	return "L" + pt1x + "," + pt1y + "L" + pt2x + "," + pt2y + "L" + ptx + "," + pty + "Z";
+	//return "L" + pt1x + "," + pt1y + "L" + pt2x + "," + pt2y + "L" + ptx + "," + pty + "Z";
+	return "L" + (r * Math.cos(160 * Math.PI/180 + angle) + ptx) + "," + (r * Math.sin(160 * Math.PI/180 + angle) + pty) + "L" + (r * Math.cos(-160 * Math.PI/180 + angle) + ptx) + "," + (r * Math.sin(-160 * Math.PI/180 + angle) + pty) + "L" + ptx + "," + pty + "Z";
 }
