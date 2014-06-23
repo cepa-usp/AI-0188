@@ -55,6 +55,7 @@ AI0188.prototype.createBackground = function(imgBkg){
 	}).appendTo('#'+this.el);
 
 	setTimeout(this.adjustBackgroundImage.bind(this), 3000);
+	//console.log("done")
 }
 
 AI0188.prototype.adjustBackgroundImage = function(){
@@ -68,6 +69,7 @@ AI0188.prototype.adjustBackgroundImage = function(){
 	var newHeight = this.imgProperties.height * divScale;
 	$._spritely.instances.backRollingImg.options.img_width = newWidth;
 	$._spritely.instances.backRollingImg.options.img_height = newHeight;
+	//console.log("imagem ajustada")
 }
 
 AI0188.prototype.createWheelDiv = function(){
@@ -137,10 +139,11 @@ AI0188.prototype.wheelClick = function(evt){
 	var ai = this.newParent;
 	//console.log(evt)
 	var div = $("#wheelDiv");
-	var posx = Number(((evt.x - div.offset().left) * ai.svgSize/div.width()).toFixed(0));
-	var posy = Number(((evt.y - div.offset().top) * ai.svgSize/div.height()).toFixed(0));
+	var posx = Number(((evt.clientX - div.offset().left) * ai.svgSize/div.width()).toFixed(0));
+	var posy = Number(((evt.clientY - div.offset().top) * ai.svgSize/div.height()).toFixed(0));
 	var ray = distance(ai.svgSize/2, ai.svgSize/2, posx, posy);
 	var minDist = 15;
+
 	if(ray <= ai.wheelSize/2 + 2) {
 		if(distance(posx, posy, ai.svgSize/2, ai.svgSize/2) < minDist){
 			//Posiciona o ponto no centro da roda:
@@ -165,10 +168,16 @@ AI0188.prototype.wheelClick = function(evt){
 			//Posiciona o ponto onde foi clicado.
 			ai.addPoint(posx, posy, ray);
 		}
+	}else{
+		//Clique fora do raio
 	}
 }
 
 AI0188.prototype.addPoint = function(ptx, pty, ray){
+	if(this.pts.length >= 4){
+		this.removePt(this.pts.splice(0,1)[0]);
+	}
+
 	//console.log(ptx, pty);
 	var last = {};
 	//Angulo do ponto em relação à origem.
@@ -177,7 +186,7 @@ AI0188.prototype.addPoint = function(ptx, pty, ray){
 	last.tInicial = this.tcurrent;
 	//last.inicial = {x:ptx, y:pty};
 	//Set com os objetos que rotacionarao junto com o ponto
-	last.set = this.raphael.set();
+	//last.set = this.raphael.set();
 	
 	//Vetor translação
 	last.trans = this.raphael.path("M" + ptx + "," + pty + "L" + (ptx - this.vTrans) + "," + pty + drawArrow(ptx, pty, 0)).attr({"stroke-width": "3", "stroke": "#000000", fill:"#000000"});
@@ -205,18 +214,25 @@ AI0188.prototype.addPoint = function(ptx, pty, ray){
 	this.pts.push(last);
 }
 
+AI0188.prototype.removePt = function(pt){
+	pt.trans.remove();
+	pt.rot.remove();
+	pt.result.remove();
+	pt.pt.remove();
+}
+
 AI0188.prototype.updateT = function(timestamp){
 	//var dt = (timestamp - this.tcurrent)/1000;
 	this.tcurrent = timestamp;
 	this.wheelImage.attr("transform", "r-" + this.theta * timestamp/10);
 
-	if(this.count < 1){
+	/*if(this.count < 1){
 		this.count++;
 		requestAnimationFrame(this.updateT.bind(this));
 		return;
 	}else{
 		this.count = 0;
-	}
+	}*/
 
 	var pt = null;
 	var ptRotation = null;
