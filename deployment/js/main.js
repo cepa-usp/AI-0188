@@ -1,235 +1,26 @@
-var velSlider;
-var raioSlider;
-var checkEscalar;
-var checkVetorial;
-var r = 60;
-var vel = 0;
-var current = 0;
-var divVel;
-var divRaio;
-var divAngle;
-var divArc;
-var conteudo;
-var circle, circleImage;
-var angle = 0;
-var arch = 0;
-var mcRaio;
-var mcArco;
-var personagem;
-var personw = 80/4;
-var personh = 218/4;
-var vetorVel;
-var dash1, dash2;
-var vetorAcel;
 
-var rMin = 120;
-var rMax = 200;
-var rMinReal = 20;
-var rMaxReal = 100;
-var m = (rMaxReal - rMinReal)/(rMax - rMin);
 
 function init(){
-	//var conteudo = $("#conteudo");
-	divVel = $("#vel");
-	divRaio = $("#raio");
-	divAngle = $("#angle");
-	divArc = $("#arc");
-	checkEscalar = $("#esc");
-	checkVetorial = $("#vet");
-	checkEscalar.attr('checked', true);
-	checkVetorial.attr('checked', true);
-
-	conteudo = Raphael("conteudo");
-	//circleImage = conteudo.image("img/background.jpg", 300 - r, 240 - r, 2 * r, 2 * r).attr("opacity", "0.8");
-	personagem = conteudo.image("img/person.png", 300 + r, 240, personw, personh);
-	circle = conteudo.circle(300, 240, r);
-	mcArco = conteudo.path("M0,0").attr("stroke-width", "3");
-	mcRaio = conteudo.path("M0,0").attr({"fill": "#0000FF", 'fill-opacity': 0.5});
-	vetorVel = conteudo.path("M0,0").attr({"stroke-width": "3", "stroke": "#00FF00", fill:"#00FF00"});
-	vetorAcel = conteudo.path("M0,0").attr({"stroke-width": "3", "stroke": "#FF0000", fill:"#FF0000"});
-	dash1 = conteudo.path("M0,0").attr({'stroke-dasharray': "--"});
-	dash2 = conteudo.path("M0,0").attr({'stroke-dasharray': "--"});
-
-	velSlider = new Dragdealer('velSlider', {slide:false, steps:81, snap:true, x:0.5, animationCallback: velMoving});
-	raioSlider = new Dragdealer('raioSlider', {slide:false, steps:(rMaxReal - rMinReal + 1), snap:true, x:0.5, animationCallback: raioMoving});
-
-	checkEscalar.on("click", escClick);
-	checkVetorial.on("click", vetClick);
-
-	
-	//drawCircle();
-	requestAnimationFrame(update);
-}
-
-function drawCircle(){
-	var raio = getR();
-	//circleImage.attr({x: 300 - raio, y: 240 - raio, width: 2 * raio, height: 2 * raio});
-	circle.attr("r", raio);
-	dash1.attr("path", "M300,240L" + (300 + raio) + ",240");
-	dash2.attr("path", "M300,240L" + (300 + raio * Math.cos(angle * Math.PI/180)) + "," + (240 + raio * Math.sin(angle * Math.PI/180)));
-	//circleImage.transform("r" + angle);
-}
-
-function updatePerson(){7
-	var raio = getR();
-	personagem.attr({
-		x: 300 + (raio * Math.cos(angle * Math.PI/180)) - personw/2,
-		y: 240 + (raio * Math.sin(angle * Math.PI/180)) - personh/2,
-	})
-}
-
-function updateVetorVel(){
-	if(checkVetorial.is(':checked')){
-		if(Number(vel) == 0) vetorVel.hide();
-		else vetorVel.show();
-	}else{
-		vetorVel.hide();
-	}
-	
-	var raio = getR();
-	var posX = 300 + (raio * Math.cos(angle * Math.PI/180));
-	var posY = 240 + (raio * Math.sin(angle * Math.PI/180));
-	vetorVel.attr("path", "M" + (posX) + "," + posY + "L" + (posX) + "," + (posY - getVel()) + "L" + (posX - 5) + "," + (posY - getVel()) + "L" + posX + "," + (posY - getVel() + (Number(vel) > 0 ? -8 : 8)) + "L" + (posX + 5) + "," + (posY - getVel()) + "L" + (posX) + "," + (posY - getVel()));
-	vetorVel.transform(["R", angle, posX ,posY]);
-}
-
-function updateVetorAcel(){
-	if(checkVetorial.is(':checked')){
-		if(Number(vel) == 0) vetorAcel.hide();
-		else vetorAcel.show();
-	}else{
-		vetorAcel.hide();
-	}
-	var raio = getR();
-	var acel = getAceleration();
-	var posX = 300 + (raio * Math.cos(angle * Math.PI/180));
-	var posY = 240 + (raio * Math.sin(angle * Math.PI/180));
-	vetorAcel.attr("path", "M" + posX + "," + posY + "L" + (posX - acel) + "," + posY + "L" + (posX - acel) + "," + (posY - 5) + "L" + (posX - acel - 8) + "," + posY + "L" + (posX - acel) + "," + (posY + 5) + "L" + (posX - acel) + "," + posY);
-	vetorAcel.transform(["R", angle, posX ,posY]);
-}
-
-function getR(){
-	return (r - rMinReal)/m + rMin;
-}
-
-function escClick(e){
-	if(checkEscalar.is(':checked')){
-		mcArco.show();
-		mcRaio.show();
-		dash1.show();
-		dash2.show();
-	}else{
-		mcArco.hide();
-		mcRaio.hide();
-		dash1.hide();
-		dash2.hide();
-	}
-}
-
-function vetClick(e){
-	if(checkVetorial.is(':checked')){
-		//personagem.show();
-	}else{
-		//personagem.hid(e);
-	}
-}
-
-
-function velMoving(x, y){
-	var newVel = -40 + 80 * x;
-
-	vel = newVel;
-	divVel.html("Velocidade: " + newVel + " m/s");
-	//update(2000);
-}
-
-function raioMoving(x, y){
-	var newRaio = ((x * (rMaxReal - rMinReal)) + rMinReal).toFixed(0);
-
-	r = newRaio;
-	divRaio.html("Raio: " + newRaio + " m");
-	//update();
-}
-
-function getVel(){
-	return vel/r * 50;
-}
-
-function getTheta(t){
-	return getVel() * t;
-}
-
-function getArch(theta){
-	return r * theta * Math.PI/360;
-}
-
-function getAceleration(){
-	return Math.pow(vel, 2)/r;
+	var ai = new AI0188("content", "./img/background.png");
+	//requestAnimationFrame(update);
 }
 
 function update(timestamp){
 	//Tempo passado desdo a últim chamada
 	var dt = (timestamp - current)/1000;
 	current = timestamp;
-	//Angulo 
-	var deltaAngle = getTheta(dt);
-	angle -= deltaAngle;
-	angle = angle%360;
-	if(angle > 0) angle -= 360;
-	divAngle.html("Ângulo: " + (angle * -1).toFixed(1) + "º" + " (" + (angle * Math.PI/180 * -1).toFixed(2) + " rad)");
-
-	arch = getArch(angle * -1);
-	divArc.html("Arco: " + arch.toFixed(1) + " m");
-
-
-	updatePerson();
-	updateVetorVel();
-	updateVetorAcel();
-	drawCircle();
-	if(angle < 0){
-		var paths = getPaths();
-		mcRaio.attr("path", paths.raio);
-		mcArco.attr("path", paths.arco)
-	}
-
 
 	//if(timestamp < 2000)
 		requestAnimationFrame(update);
 }
 
-function getPaths(){
-	var caminhos = {};
-	var cte = Math.PI/180;
-	var cx = 300;
-	var cy = 240;
-	//var nAngle = angle * -1;
-	var rAngle = 60;
-	var rTotal = getR();
-	var ptFinal = {x:rAngle * Math.cos(angle * cte), y:rAngle * Math.sin(angle * cte)};
-	var raioPath = "M" + (ptFinal.x + cx) + "," + (ptFinal.y + cy) + "L" + cx + "," + cy + "L" + (cx + rAngle) + "," + cy;
-	//var raioPath = "M" + (cx + rAngle) + "," + cy;
-	var arcoPath = "M" + (cx + rTotal) + "," + cy;
-	//console.log(angle);
-	for (var i = 0; i >= angle; i-=1) {
-		var ang = i;
-
-		var rx = rAngle * Math.cos(ang * cte);
-		var ry = rAngle * Math.sin(ang * cte);
-		raioPath += "L" + (rx + cx) + "," + (ry + cy);
-
-		var rtx = rTotal * Math.cos(ang * cte);
-		var rty = rTotal * Math.sin(ang * cte);
-		arcoPath += "L" + (rtx + cx) + "," + (rty + cy);
-	};
-
-	raioPath += "L" + (ptFinal.x + cx) + "," + (ptFinal.y + cy);
-
-	caminhos.raio = raioPath;
-	caminhos.arco = arcoPath;
-
-	return caminhos;
+//Verifica se é um celular que está sendo usado.
+function isMobile(){
+  var a = navigator.userAgent||navigator.vendor||window.opera;
+  if(/android|avantgo|blackberry|blazer|compal|elaine|fennec|hiptop|ip(hone|od|ad)|iris|kindle|lge |maemo|midp|mmp|mobile|o2|opera m(ob|in)i|palm( os)?|p(ixi|re)\/|plucker|pocket|psp|smartphone|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce; (iemobile|ppc)|xiino/i.test(a)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|e\-|e\/|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(di|rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|xda(\-|2|g)|yas\-|your|zeto|zte\-/i.test(a)){
+    return true;
+  }else{
+    return false;
+  }
 }
 
-function distance(x1, y1, x2, y2){
-	return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-}
