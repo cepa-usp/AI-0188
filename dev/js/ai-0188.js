@@ -57,6 +57,52 @@ AI0188.prototype.createButtons = function(){
 		cursor: "pointer"
 	}).on("click", this.playPause.bind(this)
 	).appendTo('#'+this.el);
+
+	$("#" + this.el).append("<div id='checks'></div>");
+	$("#checks").append(
+		"<input id='vetTrans' type='checkbox' value='translacao' checked='true'/><label for='vetTrans'> Translação</label><br>" 
+	).append(
+		"<input id='vetRot' type='checkbox' value='rotacao' checked='true'/><label for='vetRot'> Rotação</label><br>"
+	).append(
+		"<input id='vetResult' type='checkbox' value='resultante' checked='true'/><label for='vetResult'> Resultante</label>" 
+	).css({
+		"margin-left": "10px",
+		"margin-top": "10px",
+		width: "120px"
+	});
+
+	$("#vetTrans").on("change", this.checkChange.bind(this));
+	$("#vetRot").on("change", this.checkChange.bind(this));
+	$("#vetResult").on("change", this.checkChange.bind(this));
+}
+
+AI0188.prototype.checkChange = function(evt){
+	var el = $(evt.target);
+	this.showHideVectors(el.val(), el[0].checked)
+}
+
+AI0188.prototype.showHideVectors = function(vet, checked){
+	//console.log(this);
+	switch(vet){
+		case "rotacao":
+			for (var i = 0; i < this.pts.length; i++) {
+				if(checked) this.pts[i].rot.show();
+				else this.pts[i].rot.hide();
+			};
+			break;
+		case "translacao":
+			for (var i = 0; i < this.pts.length; i++) {
+				if(checked) this.pts[i].trans.show();
+				else this.pts[i].trans.hide();
+			};
+			break;
+		case "resultante":
+			for (var i = 0; i < this.pts.length; i++) {
+				if(checked) this.pts[i].result.show();
+				else this.pts[i].result.hide();
+			};
+			break;
+	}
 }
 
 AI0188.prototype.playPause = function(){
@@ -211,7 +257,8 @@ AI0188.prototype.wheelClick = function(evt){
 		}
 	}else{
 		//Clique fora do raio
-		if(evt.target.id != "playPause") ai.removeAllPoints();
+		console.log(evt.target.id)
+		if(evt.target.id == "backRollingImg" || evt.target.id == "content") ai.removeAllPoints();
 	}
 }
 
@@ -254,6 +301,10 @@ AI0188.prototype.addPoint = function(ptx, pty, ray){
 	//var lastAnimation = Raphael.animation({transform: "r-360 " + (this.svgSize/2) + "," + (this.svgSize/2)}, 8000/*, "linear", function(){last.set.attr({"transform": ""}), console.log(last.set)}*/).repeat(Infinity);
 	//var vAnimation
 	//last.set.animate(lastAnimation);
+
+	if(!$("#vetTrans")[0].checked) last.trans.hide();
+	if(!$("#vetRot")[0].checked) last.rot.hide();
+	if(!$("#vetResult")[0].checked) last.result.hide();
 	
 	this.pts.push(last);
 }
