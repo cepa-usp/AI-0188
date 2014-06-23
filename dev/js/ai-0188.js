@@ -27,14 +27,47 @@ function AI0188(element, background){
 	this.ptR = 5;
 	this.tcurrent = 0;
 	this.count = 0;
+	this.tTotal = 0;
+	this.pause = false;
 
 	this.init(element);
 }
 
 AI0188.prototype.init = function(element){
+	this.createButtons();
 	this.createBackground(this.bkg);
 	this.createWheelDiv();
 	this.createRaphael();
+}
+
+AI0188.prototype.createButtons = function(){
+	$('<div/>', {
+	    id: 'playPause',
+	    text: 'Pause'
+	}).css({
+		position: "absolute",
+		width: "100px",
+		height: "40px",
+		top: "10px",
+		right: "10px",
+		"background-color": "red",
+		"font-weight": "bold",
+		"line-height": "40px",
+		"text-align": "center",
+		cursor: "pointer"
+	}).on("click", this.playPause.bind(this)
+	).appendTo('#'+this.el);
+}
+
+AI0188.prototype.playPause = function(){
+	$('#backRollingImg').spToggle();
+	if(this.pause){
+		this.pause = false;
+		$("#playPause").html("Pause").css("background-color", "red");
+	}else{
+		this.pause = true;
+		$("#playPause").html("Play").css("background-color", "green");
+	}
 }
 
 AI0188.prototype.createBackground = function(imgBkg){
@@ -127,16 +160,24 @@ AI0188.prototype.createRaphael = function(){
     this.wheelImage = this.raphael.image("img/roda.png", (this.svgSize - this.wheelSize)/2, (this.svgSize - this.wheelSize)/2, this.wheelSize, this.wheelSize);
     //this.wheelCircle = this.raphael.circle(250, 250, 250);
 	//this.wheelCircle.click(this.wheelClick);
-	this.wheelImage.newParent = this;
-	this.wheelImage.click(this.wheelClick);
+	//this.wheelImage.newParent = this;
+	//this.wheelImage.click(this.wheelClick);
+	this.divEl.on("click", this.wheelClick.bind(this));
 	//this.wheelAnimation = Raphael.animation({transform: "r-360"}, 8000).repeat(Infinity);
 	//this.wheelImage.animate(this.wheelAnimation);
 	//$('#wheelDiv').rotate();
 	requestAnimationFrame(this.updateT.bind(this));
 }
 
+AI0188.prototype.removeAllPoints = function(){
+	//console.log(this);
+	for (var i = this.pts.length - 1; i >= 0; i--) {
+		this.removePt(this.pts.splice(i, 1)[0]);
+	};
+}
+
 AI0188.prototype.wheelClick = function(evt){
-	var ai = this.newParent;
+	var ai = this;//.newParent;
 	//console.log(evt)
 	var div = $("#wheelDiv");
 	var posx = Number(((evt.clientX - div.offset().left) * ai.svgSize/div.width()).toFixed(0));
@@ -170,11 +211,12 @@ AI0188.prototype.wheelClick = function(evt){
 		}
 	}else{
 		//Clique fora do raio
+		if(evt.target.id != "playPause") ai.removeAllPoints();
 	}
 }
 
 AI0188.prototype.addPoint = function(ptx, pty, ray){
-	if(this.pts.length >= 4){
+	if(this.pts.length >= 5){
 		this.removePt(this.pts.splice(0,1)[0]);
 	}
 
@@ -183,25 +225,27 @@ AI0188.prototype.addPoint = function(ptx, pty, ray){
 	//Angulo do ponto em relação à origem.
 	last.angle = Math.atan2(pty - this.svgSize/2, ptx - this.svgSize/2);
 	last.ray = ray;
-	last.tInicial = this.tcurrent;
+	last.tInicial = this.tcurrent * 1000;
 	//last.inicial = {x:ptx, y:pty};
 	//Set com os objetos que rotacionarao junto com o ponto
 	//last.set = this.raphael.set();
 	
 	//Vetor translação
-	last.trans = this.raphael.path("M" + ptx + "," + pty + "L" + (ptx - this.vTrans) + "," + pty + drawArrow(ptx, pty, 0)).attr({"stroke-width": "3", "stroke": "#000000", fill:"#000000"});
+	last.trans = this.raphael.path("M" + ptx + "," + pty + "L" + (ptx - this.vTrans) + "," + pty + drawArrow(ptx - this.vTrans, pty, Math.PI)).attr({"stroke-width": "3", "stroke": "#000000", fill:"#000000"});
 	
 	//Vetor rotação
 	last.d = this.theta * ray;
 	var rotx = ray * Math.cos(last.angle) + last.d * Math.sin(last.angle) + this.svgSize/2;
 	var roty = ray * Math.sin(last.angle) - last.d * Math.cos(last.angle) + this.svgSize/2;
-	last.rot = this.raphael.path("M" + ptx + "," + pty + "L" + rotx + "," + roty).attr({"stroke-width": "2", "stroke": "#0000FF", fill:"#0000FF"});
-	
+	if(distance(rotx, roty, ptx, pty) > 5) last.rot = this.raphael.path("M" + ptx + "," + pty + "L" + rotx + "," + roty + drawArrow(rotx, roty, last.angle - Math.PI/2)).attr({"stroke-width": "2", "stroke": "#0000FF", fill:"#0000FF"});
+	else last.rot = this.raphael.path("M" + ptx + "," + pty + "L" + rotx + "," + roty).attr({"stroke-width": "2", "stroke": "#0000FF", fill:"#0000FF"});
+
 	//Vetor resultante
 	var resultx = (ptx - this.vTrans - ptx) + (rotx - ptx) + ptx;
 	var resulty = (pty - pty) + (roty - pty) + pty;
-	last.result = this.raphael.path("M" + ptx + "," + pty + "L" + resultx + "," + resulty + drawArrow(resultx, resulty, 0)).attr({"stroke-width": "1", "stroke": "#00FF00", fill:"#00FF00"});
-	
+	var angleResult = Math.atan2((pty - pty) + (roty - pty), (ptx - this.vTrans - ptx) + (rotx - ptx));
+	if(distance(resultx, resulty, ptx, pty) >= 10)last.result = this.raphael.path("M" + ptx + "," + pty + "L" + resultx + "," + resulty + drawArrow(resultx, resulty, angleResult)).attr({"stroke-width": "1", "stroke": "#00FF00", fill:"#00FF00"});
+	else last.result = this.raphael.path("M" + ptx + "," + pty + "L" + resultx + "," + resulty).attr({"stroke-width": "1", "stroke": "#00FF00", fill:"#00FF00"});
 	//O ponto
 	last.pt = this.raphael.circle(ptx, pty, this.ptR).attr("fill", "#F00");
 	//last.set.push(last.pt);
@@ -222,54 +266,61 @@ AI0188.prototype.removePt = function(pt){
 }
 
 AI0188.prototype.updateT = function(timestamp){
-	//var dt = (timestamp - this.tcurrent)/1000;
-	this.tcurrent = timestamp;
-	this.wheelImage.attr("transform", "r-" + this.theta * timestamp/10);
+	
+	var dt = (timestamp - this.tTotal)/1000;
+	this.tTotal = timestamp;
 
-	/*if(this.count < 1){
-		this.count++;
-		requestAnimationFrame(this.updateT.bind(this));
-		return;
-	}else{
-		this.count = 0;
-	}*/
+	if(!this.pause){
+		this.tcurrent += dt;
+		//console.log(this.tcurrent)
+		this.wheelImage.attr("transform", "r-" + this.theta * this.tcurrent*100);
 
-	var pt = null;
-	var ptRotation = null;
-	var bbox = null;
-	var ptx = null;
-	var pty = null;
-	var rotx = null;
-	var roty = null;
-	var resultx = null;
-	var resulty = null;
-	var angleResult = null;
 
-	for (var i = 0; i < this.pts.length; i++) {
-		pt = this.pts[i];
-		ptRotation = this.theta * (timestamp - pt.tInicial)/10;
-		pt.pt.attr("transform", "r-" + ptRotation + " " + this.svgSize/2 + "," + this.svgSize/2);
-		bbox = pt.pt.getBBox();
-		ptx = bbox.x + this.ptR;
-		pty = bbox.y + this.ptR;
-		pt.angle = Math.atan2(pty - this.svgSize/2, ptx - this.svgSize/2);
+		/*if(this.count < 1){
+			this.count++;
+			requestAnimationFrame(this.updateT.bind(this));
+			return;
+		}else{
+			this.count = 0;
+		}*/
 
-		//Vetor translação:
-		pt.trans.attr("path", "M" + ptx + "," + pty + "L" + (ptx - this.vTrans) + "," + (pty) + drawArrow(bbox.x - this.vTrans + this.ptR, bbox.y + this.ptR, Math.PI));
+		var pt = null;
+		var ptRotation = null;
+		var bbox = null;
+		var ptx = null;
+		var pty = null;
+		var rotx = null;
+		var roty = null;
+		var resultx = null;
+		var resulty = null;
+		var angleResult = null;
 
-		//Vetor rotação:
-		rotx = pt.ray * Math.cos(pt.angle) + pt.d * Math.sin(pt.angle) + this.svgSize/2;
-		roty = pt.ray * Math.sin(pt.angle) - pt.d * Math.cos(pt.angle) + this.svgSize/2;
-		if(distance(rotx, roty, ptx, pty) > 5) pt.rot.attr("path", "M" + ptx + "," + pty + "L" + rotx + "," + roty + drawArrow(rotx, roty, pt.angle - Math.PI/2));
-		else pt.rot.attr("path", "M" + ptx + "," + pty + "Z");
+		for (var i = 0; i < this.pts.length; i++) {
+			pt = this.pts[i];
+			ptRotation = this.theta * ((this.tcurrent * 1000) - pt.tInicial)/10;
+			pt.pt.attr("transform", "r-" + ptRotation + " " + this.svgSize/2 + "," + this.svgSize/2);
+			bbox = pt.pt.getBBox();
+			ptx = bbox.x + this.ptR;
+			pty = bbox.y + this.ptR;
+			pt.angle = Math.atan2(pty - this.svgSize/2, ptx - this.svgSize/2);
 
-		//Vetor resultante
-		resultx = (ptx - this.vTrans - ptx) + (rotx - ptx) + ptx;
-		resulty = (pty - pty) + (roty - pty) + pty;
-		angleResult = Math.atan2((pty - pty) + (roty - pty), (ptx - this.vTrans - ptx) + (rotx - ptx));
-		if(distance(resultx, resulty, ptx, pty) >= 10) pt.result.attr("path", "M" + ptx + "," + pty + "L" + resultx + "," + resulty + drawArrow(resultx, resulty, angleResult));
-		else pt.result.attr("path", "M" + ptx + "," + pty + "L" + resultx + "," + resulty);
-	};
+			//Vetor translação:
+			pt.trans.attr("path", "M" + ptx + "," + pty + "L" + (ptx - this.vTrans) + "," + (pty) + drawArrow(bbox.x - this.vTrans + this.ptR, bbox.y + this.ptR, Math.PI));
+
+			//Vetor rotação:
+			rotx = pt.ray * Math.cos(pt.angle) + pt.d * Math.sin(pt.angle) + this.svgSize/2;
+			roty = pt.ray * Math.sin(pt.angle) - pt.d * Math.cos(pt.angle) + this.svgSize/2;
+			if(distance(rotx, roty, ptx, pty) > 5) pt.rot.attr("path", "M" + ptx + "," + pty + "L" + rotx + "," + roty + drawArrow(rotx, roty, pt.angle - Math.PI/2));
+			else pt.rot.attr("path", "M" + ptx + "," + pty + "Z");
+
+			//Vetor resultante
+			resultx = (ptx - this.vTrans - ptx) + (rotx - ptx) + ptx;
+			resulty = (pty - pty) + (roty - pty) + pty;
+			angleResult = Math.atan2((pty - pty) + (roty - pty), (ptx - this.vTrans - ptx) + (rotx - ptx));
+			if(distance(resultx, resulty, ptx, pty) >= 10) pt.result.attr("path", "M" + ptx + "," + pty + "L" + resultx + "," + resulty + drawArrow(resultx, resulty, angleResult));
+			else pt.result.attr("path", "M" + ptx + "," + pty + "L" + resultx + "," + resulty);
+		};
+	}
 
 	requestAnimationFrame(this.updateT.bind(this));
 }
