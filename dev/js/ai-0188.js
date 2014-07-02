@@ -122,7 +122,7 @@ AI0188.prototype.createBackground = function(imgBkg){
 	}).css({
 		position: "absolute",
 		width: "100%",
-		height: "40%",
+		height: "60%",
 		bottom: "0px",
 		background: "url(" + imgBkg + ")",
 		'background-repeat': "repeat-x",
