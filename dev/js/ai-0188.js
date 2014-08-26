@@ -58,6 +58,23 @@ AI0188.prototype.createButtons = function(){
 	}).on("click", this.playPause.bind(this)
 	).appendTo('#'+this.el);
 
+	$('<div/>', {
+	    id: 'playPause',
+	    text: 'Remover pontos'
+	}).css({
+		position: "absolute",
+		width: "170px",
+		height: "40px",
+		top: "10px",
+		right: "120px",
+		"background-color": "blue",
+		"font-weight": "bold",
+		"line-height": "40px",
+		"text-align": "center",
+		cursor: "pointer"
+	}).on("click", this.removeAllPoints.bind(this)
+	).appendTo('#'+this.el);
+
 	$("#" + this.el).append("<div id='checks'></div>");
 	$("#checks").append(
 		"<input id='vetTrans' type='checkbox' value='translacao' checked='true'/><label for='vetTrans'> Translação</label><br>" 
@@ -257,8 +274,8 @@ AI0188.prototype.wheelClick = function(evt){
 		}
 	}else{
 		//Clique fora do raio
-		console.log(evt.target.id)
-		if(evt.target.id == "backRollingImg" || evt.target.id == "content") ai.removeAllPoints();
+		//console.log(evt.target.id)
+		//if(evt.target.id == "backRollingImg" || evt.target.id == "content") ai.removeAllPoints();
 	}
 }
 
